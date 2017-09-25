@@ -4,18 +4,18 @@
 
 char * returnID(char * text)
 {
-printf("text %s\n", text);
     char textVerify[8];
     char * version;
-    double versionConverted = 0.0;
+    float versionConverted = 0.0;
     int j, i;
     int length;
     j = 0;
 
+    text = strcat(text, "\n");
     for (i = 0; i < 8; i++)
     {
          textVerify[i] = text[i];
-    } i++;
+    }
 
     if (strcmp(textVerify, "VERSION:") == 0)
     {
@@ -27,8 +27,7 @@ printf("text %s\n", text);
              i++;
              j++;
         }
-
-        if (sscanf(version, "%lf", &versionConverted) == 1) //find some code
+        if (sscanf(version, "%f", &versionConverted) == 1) //find some code
         {
             return version;
         }
@@ -43,6 +42,9 @@ printf("text %s\n", text);
 ErrorCode createCalendar(char* fileName, Calendar** obj)
 {
     obj = malloc(sizeof(Calendar*));
+    *obj = malloc(sizeof(Calendar*));
+    //(*obj)->version = malloc(sizeof(float);
+
     if (fileName == NULL || fileName[0] == '\n' || fileName[0] == '0')
     {
         //free(obj);
@@ -102,29 +104,23 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
             {
                 k++;
             }
-
-if (k==1)
-{
-printf("%s\n", storedText[0]);
-exit(0);
-}
         }
-printf("hello %s\n", storedText[0]);
-exit(0);
-        if (strcmp(storedText[0], "BEGIN:VCALENDAR") == 0) {
-printf("hi\n");
+
+        if (strcmp(storedText[0], "BEGIN:VCALENDAR") != 0) {
             return INV_CAL;
         }
-        if (returnID(storedText[1]) == NULL)
+        if (returnVersion(storedText[1]) == NULL)
         {
-printf("wtf\n");
             return INV_VER; //also gotta check for duplicates
         }
-        strcpy(version, returnID(storedText[1]));
-        free(returnID(storedText[1]));
-printf("wtf\n");
-        printf("%s test\n", version);
-        exit(0);
+        strcpy(version, returnVersion(storedText[1]));
+        free(returnVersion(storedText[1]));
+        (*obj)->version = strtof(version, NULL);
+
+        if (returnID(storedText[2]) == NULL)
+        {
+
+        }
     }
     else
     {
