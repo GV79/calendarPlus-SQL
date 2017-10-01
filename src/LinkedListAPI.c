@@ -17,62 +17,6 @@ Compiles with -std=c11 -Wall and -pedantic tags.
 
 #include "LinkedListAPI.h"
 
-/*
-char* printFunc(void *toBePrinted){
-	return (char*)toBePrinted;
-}
-
-//Comparing strings is done by strcmp
-int compareFunc(const void *first, const void *second){
-	return strcmp((char*)first, (char*)second);
-}
-
-//Freeing a string is also straightforward
-void deleteFunc(void *toBeDeleted){
-	free(toBeDeleted);
-}
-
-
-int main()
-{
-    List list = initializeList(&printFunc, &deleteFunc, &compareFunc);
-
-if ((char*)getFromFront(list) != NULL)
-{
-printf("%s\n", (char*)getFromFront(list));
-}
-    insertFront(&list, "upple");
-    insertBack(&list, "wrap");
-    insertSorted(&list, "test");
-    insertSorted(&list, "kangaroo");
-    insertSorted(&list, "oompa");
-    insertSorted(&list, "zebra");
-    insertSorted(&list, "kangaroo");
-insertFront(&list, "aaah");
-insertBack(&list, "woah");
-insertSorted(&list, "ab");
-insertSorted(&list, "zzz");
-printf("%s %s\n", (char*)getFromFront(list), (char*)getFromBack(list));
-printf("%s\n", toString(list));
-deleteDataFromList(&list, "zzz");
-    //printf("%s\n", toString(list));
-    //insertBack(&list, "test3"
-    //insertFront(&list, "test");
-    //insertBack(&list, "test2");
-
-    if (toString(list) != NULL)
-    {
-    printf("%s\n", toString(list));
-    }
-//    ListIterator iter = createIterator(list);
-//    printf("next element %s\n", (char*)nextElement(&iter));
-//    printf("next element %s\n", (char*)nextElement(&iter));
-//    printf("next element %s\n", (char*)nextElement(&iter));
-    clearList(&list);
-    return 0;
-}
-*/
-
 List initializeList(char* (*printFunction)(void* toBePrinted),void (*deleteFunction)(void* toBeDeleted),int (*compareFunction)(const void* first,const void* second))
 {
     List list;
@@ -95,7 +39,6 @@ Node * initializeNode(void * data)
 
     if (node == NULL || data == NULL)
     {
-        printf("Data is null.\n");
         return NULL;
     }
     else
@@ -110,12 +53,16 @@ Node * initializeNode(void * data)
 
 void insertFront(List * list, void * toBeAdded)
 {
+    if (toBeAdded == NULL || list == NULL)
+    {
+        return;
+    }
+
     Node * newNode = initializeNode(toBeAdded);
     if (list->head == NULL)
     {
         list->head = newNode;
         list->tail = newNode;
-        return;
     }
     else
     {
@@ -131,12 +78,16 @@ void insertFront(List * list, void * toBeAdded)
 
 void insertBack(List * list, void * toBeAdded)
 {
+    if (toBeAdded == NULL || list == NULL)
+    {
+        return;
+    }
+
     Node * newNode = initializeNode(toBeAdded);
     if (list->head == NULL)
     {
         list->head = newNode;
         list->tail = newNode;
-        return;
     }
     else
     {
@@ -148,27 +99,35 @@ void insertBack(List * list, void * toBeAdded)
     return;
 }
 
-void clearList(List* list)
+void clearList(List * list)
 {
-    if (list->head != NULL)
+    if (list != NULL)
     {
-        Node * temp = list->head;
-        while (temp->next != NULL)
-        {
-            list->deleteData(temp);
-            temp = temp->next;
-        }
-        list->deleteData(list->tail);
+            Node * temp = list->head;
+            Node * tempTwo = NULL;
+            list->head = NULL;
+            list->tail = NULL;
+            while (temp != NULL)
+            {
+                tempTwo = temp->next;
+                list->deleteData(temp->data);
+                free(temp);
+                temp = tempTwo;
+            }
     }
     return;
 }
 
 void insertSorted(List* list, void* toBeAdded)
 {
+    if (toBeAdded == NULL || list == NULL)
+    {
+        return;
+    }
+
     Node * newNode = initializeNode(toBeAdded);
     if (newNode == NULL)
     {
-        printf("Data is null. Unable to insert element.\n");
         return;
     }
 
@@ -224,23 +183,21 @@ void insertSorted(List* list, void* toBeAdded)
 
 void* deleteDataFromList(List* list, void* toBeDeleted)
 {
-    void * dataDeleted = toBeDeleted;
-    Node * temp = list->head;
-
-    if (list == NULL)
+    if (list == NULL || toBeDeleted == NULL)
     {
-        printf("List does not exist.\n");
         return NULL;
     }
     else
     {
+    	void * dataDeleted = toBeDeleted;
+    	Node * temp = list->head;
         while (list->head != NULL)
         {
             if (list->compare(list->head->data, toBeDeleted) == 0)
             {
                 if (list->head->previous == NULL && list->head->next == NULL)
                 {
-                    list->deleteData(temp);
+                    free(temp);
                     list->head = NULL;
                     list->tail = NULL;
                     return NULL;
@@ -285,7 +242,6 @@ void* deleteDataFromList(List* list, void* toBeDeleted)
             list->head = list->head->next;
         }
         list->head = temp;
-        printf("Unable to find/delete node \"%s\".\n", (char*)toBeDeleted);
         return NULL;
     }
 }
@@ -312,26 +268,32 @@ void * getFromBack(List list)
 char * toString(List list)
 {
     List temp = list;
-    char * listData;
+    char * pointer;
     int amount = 0;
     if (list.head != NULL)
     {
         while (temp.head != NULL)
         {
-            amount = amount + strlen(list.printData(temp.head->data))+3;
+            pointer = list.printData(temp.head->data);
+            amount = amount + strlen(pointer)+3;
+            free(pointer);
             temp.head = temp.head->next;
         }
 
-        listData = malloc(sizeof(char*) * amount);
+        //char * listData = malloc(sizeof(char) * amount);
+	char * listData = calloc(amount, sizeof(char));
         while (list.head != NULL)
         {
-            listData = strcat(listData, list.printData(list.head->data));
+
+            pointer = list.printData(list.head->data);
+		printf("%s\n", pointer);
+            listData = strcat(listData, pointer);
+            free(pointer);
             listData = strcat(listData, " ");
             list.head = list.head->next;
         }
         return listData;
     }
-    printf("List is empty and thus printing this may cause a seg fault (depending on how it is printed).\n");
     return NULL;
 }
 
@@ -339,7 +301,7 @@ ListIterator createIterator(List list)
 {
     ListIterator iter;
 
-    if (list.head != NULL)
+    if (list.head != NULL )
     {
         iter.current = list.head;
     }
