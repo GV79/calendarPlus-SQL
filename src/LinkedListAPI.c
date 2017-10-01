@@ -255,7 +255,7 @@ void * getFromFront(List list)
     return list.head->data;
 }
 
-
+d
 void * getFromBack(List list)
 {
     if (list.tail == NULL)
@@ -279,8 +279,6 @@ char * toString(List list)
             free(pointer);
             temp.head = temp.head->next;
         }
-
-        //char * listData = malloc(sizeof(char) * amount);
 	char * listData = calloc(amount, sizeof(char));
         while (list.head != NULL)
         {

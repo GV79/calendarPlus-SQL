@@ -91,6 +91,66 @@ char * returnID(char * text)
     return NULL;
 }
 
+char * returnDT(char * text)
+{
+    char * returnAll;
+    char date[9];
+    char time[9];
+    char timeVerify[2];
+
+    if (strlen(text) != 24)
+    {
+        return NULL;
+    }
+
+    if (!(text[7] == ':' || text[7] == ';')) //might not be necessary
+    {
+        return NULL;
+    }
+
+    int i = 0;
+    for (i = 0; i != strlen(text); i++)
+    {
+        if (text[i] == '#')
+            return NULL;
+    }
+
+    for (i = 0; i < 8; i++)
+    {
+        date[i] = text[i+8];
+    }
+
+    if (text[16] != 'T')
+        return NULL;
+
+    for (i = 0; i < 6; i++)
+    {
+        time[i] = text[i+17];
+    }
+
+    if (text[23] == 'Z') //ask someone bout this
+    {
+        timeVerify[0] = '1';
+    }
+    else
+    {
+        timeVerify[0] = '0';
+    }
+    // if (dtCount == 1)
+    // {
+     //    obj = NULL;
+      //             return INV_CREATEDT;
+       //                 } // do this in the function calling this function
+
+    returnAll = malloc(sizeof(char) * 19 + 1);
+    strcpy(returnAll, date);
+    returnAll = strcat(returnAll, "#");
+    returnAll = strcat(returnAll, time);
+    returnAll = strcat(returnAll, "#");
+    returnAll = strcat(returnAll, timeVerify);
+    return returnAll;
+}
+
 int checkFile(char * fileName)
 {
     if (fileName == NULL || fileName[0] == '\n' || fileName[0] == '\0')
@@ -139,7 +199,8 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
     int idCount = 0;
     int uidCount = 0;
     int dtCount = 0;
-    int t;
+    int eventCount = 0;
+    int t = 0;
     int i = 0;
 
     if (data != NULL)
@@ -149,6 +210,10 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
             int p = 0;
             int k = 0;
             lineTrimmed = malloc(sizeof(char) * strlen(dataText) + 1);
+            if (lineTrimmed == NULL)
+            {
+                return OTHER_ERROR;
+            }
 
             while (dataText[p] == ' ')
             {
@@ -212,17 +277,23 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
 
         while (storedText[i] != '\0')
         {
-printf("hello\n");
-printf("%s each string\n", storedText[i]);
-
             char * originalString = calloc(strlen(storedText[i])+1, sizeof(char));
+            //char * uppercaseString = calloc(strlen(storedText[i]+1, sizeof(char));
             strcpy(originalString, storedText[i]);
             char * stringCheck = strtok(storedText[i], ";:");
+
   	    if (stringCheck == NULL)
             {
                 obj = NULL;
                 return INV_CAL;
             }
+
+            while (t != strlen(stringCheck))
+            {
+                stringCheck[t] = toupper(stringCheck[t]);
+                t++;
+            } t = 0;
+
             if (strcmp(stringCheck, "VERSION") == 0)
             {
                 if (versionCount == 1)
@@ -262,13 +333,21 @@ printf("%s each string\n", storedText[i]);
             }
             else if (strcmp(stringCheck, "BEGIN") == 0)
             {
-                if (strcmp(originalString, "BEGIN:VEVENT") != 0)
+                while (t != strlen(originalString))
+                {
+                    originalString[t] = toupper(originalString[t]);
+                    t++;
+                } t = 0;
+
+                if (strcmp(originalString, "BEGIN:VEVENT") != 0 || eventCount == 1)
                 {
                     obj = NULL;
                     return INV_EVENT;
                 }
 
                 Event * event = malloc(sizeof(Event));
+                (*obj)->event = event;
+                eventCount = 1;
                 while (strcmp(stringCheck, "END") != 0)
                 {
                     i++;
@@ -278,12 +357,19 @@ printf("%s each string\n", storedText[i]);
                     strcpy(originalString, storedText[i]);
                     stringCheck = strtok(storedText[i], ";:");
 
-                    if (storedText[i] == '\0' || strcmp(storedText[i], "END:VCALENDAR") == 0)
+                    if (storedText[i] == '\0' || strcmp(storedText[i], "END:VCALENDAR") == 0 || stringCheck == NULL)
                     {
                         obj = NULL;
                         return INV_EVENT;
                     }
-                    else if (strcmp(stringCheck, "UID") == 0)
+
+                    while (t != strlen(stringCheck))
+                    {
+                        stringCheck[t] = toupper(stringCheck[t]);
+                        t++;
+                    } t = 0;
+
+                    if (strcmp(stringCheck, "UID") == 0)
                     {
                         if (strlen(originalString) < 5)
                         {
@@ -295,25 +381,105 @@ printf("%s each string\n", storedText[i]);
                             obj = NULL;
                             return INV_EVENT;
                         }
-                        uidCount = 0;
-                        char * split = strtok(originalString, ";:");
-                        split = strtok(NULL, ";:");
-                        printf("%s split %s stringCheck\n", split, stringCheck);
-                        strcpy(event->UID, split);
-                        (*obj)->event = event;
+                        if (uidCount == 1)
+                        {
+                            obj = NULL;
+                            return INV_EVENT;
+                        }
+                        uidCount = 1;
+                        stringCheck = strtok(NULL, ";:");
+                        strcpy(event->UID, stringCheck);
+                        //(*obj)->event = event;
                     }
                     else if (strcmp(stringCheck, "DTSTAMP") == 0)
                     {
+                        if (dtCount == 1)
+                        {
+                            obj = NULL;
+                            return INV_CREATEDT;
+                        }
+                        toFree = returnDT(originalString);
+                        if (toFree == NULL)
+                        {
+                            obj = NULL;
+                            return INV_CREATEDT;
+                        }
+                        dtCount = 1;
+                        char * getDT = strtok(toFree, "#");
+                        strcpy(event->creationDateTime.date, getDT);
+                        getDT = strtok(NULL, "#");
+                        strcpy(event->creationDateTime.time, getDT);
+                        getDT = strtok(NULL, "#");
+//(*obj)->event = event;
+
+                        if (strcmp(getDT, "1") == 0)
+                        {
+                            event->creationDateTime.UTC = 1;
+                        }
+                        else
+                        {
+                            event->creationDateTime.UTC = 0;
+                        }
+                        //strcpy(event->creationDateTime.UTC, (bool)getDT);
+                        free(toFree);
 
                     }
 
-                    /*
-            char * originalString = calloc(strlen(storedText[i])+1, sizeof(char));
-            strcpy(originalString, storedText[i]);
-            char * stringCheck = strtok(storedText[i], ";:");
-                    */
+                    while (t != strlen(originalString))
+                    {
+                        originalString[t] = toupper(originalString[t]);
+                        t++;
+                    } t = 0;
+
+                    if (strcmp(originalString, "BEGIN:VALARM") == 0) //alarm TING
+                    {
+                            if (stringCheck == NULL || originalString[strlen(originalString)] == ';' || originalString[strlen(originalString)] == ':')
+                            {
+                                obj = NULL;
+                                return INV_EVENT;
+                            }
+
+                            while (t != strlen(stringCheck))
+                            {
+                                stringCheck[t] = toupper(stringCheck[t]);
+                                t++;
+                            } t = 0;
+
+                            while (strcmp(originalString, "END:VALARM") != 0)
+                            {
+
+                            i++;
+                            memset(stringCheck, 0, strlen(stringCheck));
+                            originalString = calloc(strlen(storedText[i])+1, sizeof(char));
+                            strcpy(originalString, storedText[i]);
+                            stringCheck = strtok(storedText[i], ";:");
+
+                                if (strcmp(stringCheck, "TRIGGER") == 0)
+                                {
+                                    stringCheck = strtok(storedText[i], 
+                                }
+                                else if (strcmp(stringCheck, "ACTION") == 0)
+                                {
+
+                                }
+                                else // optional properties
+                                {
+
+                                }
+
+                                if (strcmp(originalString, "END:VCALENDAR") == 0)
+                                {
+                                    obj = NULL;
+                                    return INV_EVENT;
+                                }
+                            }
+                    }
+                    
                 }
-                continue;
+                //(*obj)->event = event;
+                //free(originalString);
+                //continue;
+                //i--;
             }
             free(originalString);
             memset(stringCheck, 0, strlen(stringCheck));
@@ -326,7 +492,7 @@ printf("%s each string\n", storedText[i]);
         return INV_FILE;
     }
 
-    if (idCount == 0 || versionCount == 0) //and other required properties missing...etc.
+    if (idCount == 0 || versionCount == 0 || eventCount == 0) //and other required properties missing...etc.
     {
         obj = NULL;
         return INV_CAL;
@@ -338,18 +504,60 @@ printf("%s each string\n", storedText[i]);
 
 void deleteCalendar(Calendar* obj)
 {
+    if (obj != NULL)
+    { // think we'll need clear list function here as well
+        //free(obj->event.creationDateTime);
+	//free(obj->event->alarms.alarm->trigger);
+        free(obj->event);
+        free(obj);
+    }
     return;
 }
 
 char* printCalendar(const Calendar* obj)
 {
+
     return NULL;
 }
 
 char* printError(ErrorCode err)
 {
-    //ErrorCode array;
-    printf("%d\n", err);
-    return NULL;
+    if (err == OK)
+    {
+        return "OK";
+    }
+    else if (err == INV_FILE)
+    {
+        return "INV_FILE";
+    }
+    else if (err == INV_CAL)
+    {
+        return "INV_CAL";
+    }
+    else if (err == INV_VER)
+    {
+        return "INV_VER";
+    }
+    else if (err == DUP_VER)
+    {
+        return "DUP_VER";
+    }
+    else if (err == INV_PRODID)
+    {
+        return "INV_PRODID";
+    }
+    else if (err == DUP_PRODID)
+    {
+        return "DUP_PRODID";
+    }
+    else if (err == INV_EVENT)
+    {
+        return "INV_EVENT";
+    }
+    else if (err == INV_CREATEDT)
+    {
+        return "INV_CREATEDT";
+    }
+    return "OTHER_ERROR";
 }
 

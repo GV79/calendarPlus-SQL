@@ -13,11 +13,18 @@ int main(int argc, char ** argv)
     //(*calendar) = malloc(sizeof(Calendar));
     //(*calendar)->version = malloc(sizeof(float));
     //ErrorCode error;
+printf("wtf\n");
     createCalendar(argv[1], &calendar);
 //printf("wat\n");
-    printf("%lf test\n", calendar->version);
-    printf("%s test\n", calendar->prodID);
-    printf("%s test\n", calendar->event->UID);
+printf("wtf\n");
+    printf("%lf / version\n", calendar->version);
+    printf("%s / product ID\n", calendar->prodID);
+    printf("%s / UID\n", calendar->event->UID);
+     printf("%s / date\n", calendar->event->creationDateTime.date);
+ printf("%s / time\n", calendar->event->creationDateTime.time);
+ printf("%d / UTC\n", calendar->event->creationDateTime.UTC);
+
+
     //double test = (*calendar)->version;
 //printf("hello\n");
    // free(*calendar);

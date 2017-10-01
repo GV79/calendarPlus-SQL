@@ -3,7 +3,7 @@ BEGIN:VCALENDAR
 ; highest version number or the minimum and maximum range of the
 ; iCalendar specification that is required in order to interpret the
 ; iCalendar object (required)
-; We’ll stick with 2.0
+; We’ll stick with 2.0d
 VERSION:2.0
 ; identifier for the product that created the iCalendar object (required)
 PRODID:-//CIS2750//NONSGML Assignment1//EN
