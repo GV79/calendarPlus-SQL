@@ -1,7 +1,25 @@
-#include "../include/LinkedListAPI.h"
+//#include "../include/LinkedListAPI.h"
+#include "LinkedListAPI.c"
 #include "../include/CalendarParser.h"
 #include <ctype.h>
 //delete comments at the end
+
+char* printFunc(void *toBePrinted){
+	
+	return (char*)toBePrinted;
+}
+
+//Comparing strings is done by strcmp
+int compareFunc(const void *first, const void *second){
+	
+	return strcmp((char*)first, (char*)second);
+}
+
+//Freeing a string is also straightforward
+void deleteFunc(void *toBeDeleted){
+	
+	free(toBeDeleted);
+}
 
 char * returnVersion(char * text)
 {
@@ -347,8 +365,9 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
 
                 Event * event = malloc(sizeof(Event));
                 (*obj)->event = event;
+                event->properties = initializeList(printFunc, deleteFunc, compareFunc);
                 eventCount = 1;
-                while (strcmp(stringCheck, "END") != 0)
+                while (strcmp(originalString, "END:VEVENT") != 0)
                 {
                     i++;
                     free(originalString);
@@ -357,10 +376,30 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
                     strcpy(originalString, storedText[i]);
                     stringCheck = strtok(storedText[i], ";:");
 
-                    if (storedText[i] == '\0' || strcmp(storedText[i], "END:VCALENDAR") == 0 || stringCheck == NULL)
+                    if (stringCheck == NULL || storedText[i] == '\0')
                     {
                         obj = NULL;
+                        free(originalString);
                         return INV_EVENT;
+                    }
+
+                    if (strcmp(stringCheck, "END") == 0)
+                    {
+                        while (t != strlen(originalString))
+                        {
+                            originalString[t] = toupper(originalString[t]);
+                            t++;
+                        } t=0;
+                        if (strcmp(originalString, "END:VCALENDAR") == 0)
+                        {
+                            obj = NULL;
+                            free(originalString);
+                            return INV_EVENT;
+                        }
+                        else if (strcmp(originalString, "END:VEVENT") == 0)
+                        {
+                            continue;
+                        }
                     }
 
                     while (t != strlen(stringCheck))
@@ -420,7 +459,6 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
                         {
                             event->creationDateTime.UTC = 0;
                         }
-                        //strcpy(event->creationDateTime.UTC, (bool)getDT);
                         free(toFree);
 
                     }
@@ -433,30 +471,39 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
 
                     if (strcmp(originalString, "BEGIN:VALARM") == 0) //alarm TING
                     {
-                            if (stringCheck == NULL || originalString[strlen(originalString)] == ';' || originalString[strlen(originalString)] == ':')
-                            {
-                                obj = NULL;
-                                return INV_EVENT;
-                            }
-
-                            while (t != strlen(stringCheck))
-                            {
-                                stringCheck[t] = toupper(stringCheck[t]);
-                                t++;
-                            } t = 0;
-
+                            //Alarm * alarm = malloc(sizeof(Alarm));
+                            event->alarms = initializeList(printFunc, deleteFunc, compareFunc);
+                            
                             while (strcmp(originalString, "END:VALARM") != 0)
                             {
+                                i++;
+                                memset(stringCheck, 0, strlen(stringCheck));
+                                originalString = calloc(strlen(storedText[i])+1, sizeof(char));
+                                if (originalString == NULL) // need to do this for most errors, and also need to free some other stuff before quitting
+                                {
+                                    obj = NULL;
+                                    return OTHER_ERROR;
+                                }
+                                strcpy(originalString, storedText[i]);
+                                stringCheck = strtok(storedText[i], ";:");
 
-                            i++;
-                            memset(stringCheck, 0, strlen(stringCheck));
-                            originalString = calloc(strlen(storedText[i])+1, sizeof(char));
-                            strcpy(originalString, storedText[i]);
-                            stringCheck = strtok(storedText[i], ";:");
+                                if (stringCheck == NULL || originalString[strlen(originalString)-1] == ';' || originalString[strlen(originalString)-1] == ':')
+                                {
+                                    obj = NULL;
+                                    return INV_EVENT;
+                                }
+
+
+                                while (t != strlen(stringCheck))
+                                {
+                                    stringCheck[t] = toupper(stringCheck[t]);
+                                    t++;
+                                } t = 0;
 
                                 if (strcmp(stringCheck, "TRIGGER") == 0)
                                 {
-                                    stringCheck = strtok(storedText[i], 
+                                    stringCheck = strtok(NULL, ";:");
+                                    //event->
                                 }
                                 else if (strcmp(stringCheck, "ACTION") == 0)
                                 {
@@ -470,11 +517,36 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
                                 if (strcmp(originalString, "END:VCALENDAR") == 0)
                                 {
                                     obj = NULL;
+                                    free(originalString);
                                     return INV_EVENT;
                                 }
+                                free(originalString);
+                                memset(stringCheck, 0, strlen(stringCheck));
                             }
                     }
-                    
+                    else
+                    {
+//printf("cancer\n");
+//                        event->properties = initializeList(printFunc, deleteFunc, compareFunc);
+//printf("%c\n", originalString[strlen(originalString)-1]);
+                        if (originalString[strlen(originalString)-1] == ';' || originalString[strlen(originalString)-1] == ':')
+                        {
+                            obj = NULL;
+                            free(originalString);
+                            return INV_EVENT;
+                        }
+printf("rips\n");
+                        Property * property = malloc(sizeof(Property) * strlen(originalString));
+                        strcpy(property->propName, stringCheck);
+                        stringCheck = strtok(NULL, ":;");
+printf("rips2\n");
+                        //property->propDescr = malloc(sizeof(char) * strlen(stringCheck));
+                        strcpy(property->propDescr, stringCheck);
+printf("rips2.5\n");
+                        insertBack(&(**obj).event->properties, property);
+printf("rips 3\n");
+                        //Node * node = initializeNode(
+                    }
                 }
                 //(*obj)->event = event;
                 //free(originalString);

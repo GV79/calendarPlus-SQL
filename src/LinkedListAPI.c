@@ -15,7 +15,7 @@ Compiles with -std=c11 -Wall and -pedantic tags.
 
 //need to test functions when list isnt initialized or no node in there
 
-#include "LinkedListAPI.h"
+#include "../include/LinkedListAPI.h"
 
 List initializeList(char* (*printFunction)(void* toBePrinted),void (*deleteFunction)(void* toBeDeleted),int (*compareFunction)(const void* first,const void* second))
 {
@@ -33,7 +33,6 @@ Node * initializeNode(void * data)
     Node * node = malloc(sizeof(Node));
     if (node == NULL)
     {
-        printf("Memory allocation has failed in function initializeNode. Program exiting.\n");
         exit(0);
     }
 
@@ -255,7 +254,7 @@ void * getFromFront(List list)
     return list.head->data;
 }
 
-d
+
 void * getFromBack(List list)
 {
     if (list.tail == NULL)
@@ -284,7 +283,6 @@ char * toString(List list)
         {
 
             pointer = list.printData(list.head->data);
-		printf("%s\n", pointer);
             listData = strcat(listData, pointer);
             free(pointer);
             listData = strcat(listData, " ");
