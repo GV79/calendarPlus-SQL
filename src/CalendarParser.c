@@ -218,8 +218,11 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
     int uidCount = 0;
     int dtCount = 0;
     int eventCount = 0;
+    int triggerCount = 0;
+    int actionCount = 0;
     int t = 0;
     int i = 0;
+    int z = 0;
 
     if (data != NULL)
     {
@@ -299,7 +302,6 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
             //char * uppercaseString = calloc(strlen(storedText[i]+1, sizeof(char));
             strcpy(originalString, storedText[i]);
             char * stringCheck = strtok(storedText[i], ";:");
-
   	    if (stringCheck == NULL)
             {
                 obj = NULL;
@@ -365,7 +367,10 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
 
                 Event * event = malloc(sizeof(Event));
                 (*obj)->event = event;
-                event->properties = initializeList(printFunc, deleteFunc, compareFunc);
+                event->properties = initializeList(&printFunc, &deleteFunc, &compareFunc);
+                event->alarms = initializeList(&printFunc, &deleteFunc, &compareFunc); //maybe put higher?
+//                alarm->properties = initializeList(&printFunc, &deleteFunc, &compareFunc); // maybe put higher??
+
                 eventCount = 1;
                 while (strcmp(originalString, "END:VEVENT") != 0)
                 {
@@ -375,10 +380,11 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
                     originalString = calloc(strlen(storedText[i])+1, sizeof(char));
                     strcpy(originalString, storedText[i]);
                     stringCheck = strtok(storedText[i], ";:");
-
+//printf("up %s\n", stringCheck);
                     if (stringCheck == NULL || storedText[i] == '\0')
                     {
                         obj = NULL;
+                        //free(*obj); do a clear calendar maybe
                         free(originalString);
                         return INV_EVENT;
                     }
@@ -428,7 +434,8 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
                         uidCount = 1;
                         stringCheck = strtok(NULL, ";:");
                         strcpy(event->UID, stringCheck);
-                        //(*obj)->event = event;
+                        memset(stringCheck, 0, strlen(stringCheck));
+                        continue;
                     }
                     else if (strcmp(stringCheck, "DTSTAMP") == 0)
                     {
@@ -460,7 +467,8 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
                             event->creationDateTime.UTC = 0;
                         }
                         free(toFree);
-
+                        memset(stringCheck, 0, strlen(stringCheck));
+                        continue;
                     }
 
                     while (t != strlen(originalString))
@@ -471,11 +479,19 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
 
                     if (strcmp(originalString, "BEGIN:VALARM") == 0) //alarm TING
                     {
+//printf("hello\n");
+                            Alarm * alarm = malloc(sizeof(Alarm));
+                            //event->alarms = initializeList(&printFunc, &deleteFunc, &compareFunc); //maybe put higher?
+                            alarm->properties = initializeList(&printFunc, &deleteFunc, &compareFunc); // maybe put higher??
+                            List property = initializeList(&printFunc, &deleteFunc, &compareFunc);
+                            alarm->properties = property;
+                            alarm->trigger = malloc(sizeof(char));
+//printf("hi\n");
                             //Alarm * alarm = malloc(sizeof(Alarm));
-                            event->alarms = initializeList(printFunc, deleteFunc, compareFunc);
-                            
+
                             while (strcmp(originalString, "END:VALARM") != 0)
                             {
+//printf("why hello\n");
                                 i++;
                                 memset(stringCheck, 0, strlen(stringCheck));
                                 originalString = calloc(strlen(storedText[i])+1, sizeof(char));
@@ -499,21 +515,107 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
                                     stringCheck[t] = toupper(stringCheck[t]);
                                     t++;
                                 } t = 0;
-
+//printf("why super hello\n");
                                 if (strcmp(stringCheck, "TRIGGER") == 0)
                                 {
-                                    stringCheck = strtok(NULL, ";:");
-                                    //event->
+                                      if (originalString[strlen(originalString)-1] == ';' || originalString[strlen(originalString)-1] == ':' || triggerCount == 1)
+                                      {
+                                          obj = NULL;
+                                          free(originalString);
+                                          return INV_EVENT;
+                                      }
+
+                                      char * stringSplit = malloc(sizeof(char) * strlen(originalString));
+                                      if (stringSplit == NULL)
+                                      {
+                                          obj = NULL;
+                                          free(originalString);
+                                          return OTHER_ERROR;
+                                      }
+//printf("coincidence\n");
+                                      while (t != strlen(originalString))
+                                      {
+                                          if (originalString[t-1] == ':' || originalString[t-1] == ';' || z > 0)
+                                          {
+                                              stringSplit[z] = originalString[t];
+                                              z++;
+                                          }
+                                          t++;
+                                      } t = 0;
+                                      //Alarm * alarm = malloc(sizeof(Alarm));
+//printf("prob good still\n");
+                                      strcpy(alarm->trigger, stringSplit);
+//printf("bloop\n");
+                                      insertBack(&(**obj).event->alarms, alarm);
+                                      triggerCount = 1;
+//printf("blop\n");
                                 }
                                 else if (strcmp(stringCheck, "ACTION") == 0)
                                 {
+//printf("idek\n");
+                                      if (originalString[strlen(originalString)-1] == ';' || originalString[strlen(originalString)-1] == ':' || actionCount == 1)
+                                      {
+                                          obj = NULL;
+                                          free(originalString);
+                                          return INV_EVENT;
+                                      }
 
+                                      char * stringSplit = malloc(sizeof(char) * strlen(originalString));
+                                      if (stringSplit == NULL)
+                                      {
+                                          obj = NULL;
+                                          free(originalString);
+                                          return OTHER_ERROR;
+                                      }
+
+                                      while (t != strlen(originalString))
+                                      {
+                                          if (originalString[t-1] == ':' || originalString[t-1] == ';' || z > 0)
+                                          {
+                                              stringSplit[z] = originalString[t];
+                                              z++;
+                                          }
+                                          t++;
+                                      } t = 0;
+                                      z = 0;
+                                      //Alarm * alarm = malloc(sizeof(Alarm));
+                                      strcpy(alarm->trigger, stringSplit);
+                                      insertBack(&(**obj).event->alarms, alarm);
+                                      actionCount = 1;
                                 }
                                 else // optional properties
                                 {
+                                      if (originalString[strlen(originalString)-1] == ';' || originalString[strlen(originalString)-1] == ':')
+                                      {
+                                          obj = NULL;
+                                          free(originalString);
+                                          return INV_EVENT;
+                                      }
+
+                                      char * stringSplit = malloc(sizeof(char) * strlen(originalString));
+                                      if (stringSplit == NULL)
+                                      {
+                                          obj = NULL;
+                                          free(originalString);
+                                          return OTHER_ERROR;
+                                      }
+
+                                      while (t != strlen(originalString))
+                                      {
+                                          if (originalString[t-1] == ':' || originalString[t-1] == ';' || z > 0)
+                                          {
+                                              stringSplit[z] = originalString[t];
+                                              z++;
+                                          }
+                                          t++;
+                                      } t = 0;
+                                      z = 0;
+                                      //Alarm * alarm = malloc(sizeof(Alarm));
+                                      strcpy(alarm->trigger, stringSplit);
+                                      insertBack(&(**obj).event->alarms, alarm);
 
                                 }
-
+//printf("why damn\n");
                                 if (strcmp(originalString, "END:VCALENDAR") == 0)
                                 {
                                     obj = NULL;
@@ -523,6 +625,13 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
                                 free(originalString);
                                 memset(stringCheck, 0, strlen(stringCheck));
                             }
+                            if (!(triggerCount == 1 || actionCount == 1))
+                            {
+                                obj = NULL;
+                                return INV_EVENT;
+                            }
+                            triggerCount = 0;
+                            actionCount = 0;
                     }
                     else
                     {
@@ -535,17 +644,30 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
                             free(originalString);
                             return INV_EVENT;
                         }
-printf("rips\n");
-                        Property * property = malloc(sizeof(Property) * strlen(originalString));
+                        Property * property = malloc(sizeof(Property) + strlen(originalString) * sizeof(char));
                         strcpy(property->propName, stringCheck);
-                        stringCheck = strtok(NULL, ":;");
-printf("rips2\n");
-                        //property->propDescr = malloc(sizeof(char) * strlen(stringCheck));
-                        strcpy(property->propDescr, stringCheck);
-printf("rips2.5\n");
+                        memset(stringCheck, 0, strlen(stringCheck));
+                        char * stringSplit = malloc(sizeof(char) * strlen(originalString));
+                        if (stringSplit == NULL)
+                        {
+                            obj = NULL;
+                            free(originalString);
+                            return OTHER_ERROR;
+                        }
+
+                        while (t != strlen(originalString))
+                        {
+                            if (originalString[t-1] == ':' || originalString[t-1] == ';' || z > 0)
+                            {
+                                stringSplit[z] = originalString[t];
+                                z++;
+                            }
+                            t++;
+                        } t = 0;
+                        z = 0;
+                        strcpy(property->propDescr, stringSplit);
                         insertBack(&(**obj).event->properties, property);
-printf("rips 3\n");
-                        //Node * node = initializeNode(
+                        free(stringSplit);
                     }
                 }
                 //(*obj)->event = event;
