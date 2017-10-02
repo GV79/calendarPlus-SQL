@@ -7,15 +7,13 @@ int main(int argc, char ** argv)
         printf("Only one input file argument.\n");
         exit(0);
     }
-    //Calendar ** calendar;
-    //Calendar ** calendar = malloc(sizeof(Calendar*));;
     Calendar * calendar = NULL;
-    //(*calendar) = malloc(sizeof(Calendar));
-    //(*calendar)->version = malloc(sizeof(float));
-    //ErrorCode error;
-    printf("%s\n", printError(createCalendar(argv[1], &calendar)));
 
-//printf("wat\n");
+    printf("%s\n", printError(createCalendar(argv[1], &calendar)));
+    printf("%s\n", printCalendar(calendar));
+
+/*
+printf("------------------------------------------------------------------------------------------------------------------------\n");
     printf("%lf / version\n", calendar->version);
     printf("%s / product ID\n", calendar->prodID);
     printf("%s / UID\n", calendar->event->UID);
@@ -25,24 +23,29 @@ int main(int argc, char ** argv)
 
 
 void* elem;
+void* elem2;
+void * elem3;
 ListIterator iter = createIterator(calendar->event->properties);
 while ((elem = nextElement(&iter)) != NULL){
 		Property * property = (Property*)elem;
 		
-		/*
-		We use the printData function that we created to return a string representation 
-		of the data associated with the current node
-		*/
+
 		char* str = property->propName;
 		printf("balls %s\n", str);
                 char * str2 = property->propDescr;
                 printf("balls2 %s\n", str2);
-		
-		//Since list.printData dynamically allocates the string, we must free it
-		//free(str);
-                //free(str2);
 	}
 
+if (calendar->event->alarms.head == NULL)
+    printf("wtf\n");
+ListIterator iter2  = createIterator(calendar->event->alarms);
+while ((elem2 = nextElement(&iter2)) != NULL){
+		Alarm * alarm = (Alarm*)elem2;
+		printf("alarm trigger wtf %s\n", alarm->trigger);
+                printf("alarm action %s\n", alarm->action);
+	}
+
+*/
 
     //double test = (*calendar)->version;
 //printf("hello\n");
