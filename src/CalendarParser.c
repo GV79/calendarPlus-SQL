@@ -841,7 +841,6 @@ ErrorCode createCalendar(char* fileName, Calendar** obj)
                                     return INV_EVENT;
                                 }
                                 memset(stringCheck, 0, sizeof(char));
-                                memset(stringSplit, 0, sizeof(char));
                             }
                             insertBack(&(**obj).event->alarms, alarm);
                             if (!(triggerCount == 1 && actionCount == 1))
