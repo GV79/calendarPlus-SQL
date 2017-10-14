@@ -14,8 +14,7 @@ Compiles with -std=c11 -Wall and -pedantic tags.
 ****************************************************************************************/
 
 //need to test functions when list isnt initialized or no node in there
-
-#include "../include/LinkedListAPI.h"
+#include "LinkedListAPI.h"
 
 List initializeList(char* (*printFunction)(void* toBePrinted),void (*deleteFunction)(void* toBeDeleted),int (*compareFunction)(const void* first,const void* second))
 {
@@ -110,7 +109,7 @@ void clearList(List * list)
             {
                 tempTwo = temp->next;
                 list->deleteData(temp->data);
-                free(temp);
+                free(temp);	
                 temp = tempTwo;
             }
     }
