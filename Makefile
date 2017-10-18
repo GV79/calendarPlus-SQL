@@ -7,4 +7,4 @@ parser: src/CalendarParser.c
 	gcc src/CalendarParser.c -Iinclude -o bin/CalendarParser.o -c
 	ar cr bin/libcparse.a bin/CalendarParser.o
 clean:
-	rm bin/LinkedListAPI.o bin/liblist.a bin/CalendarParser.o bin/libparse.a
+	rm bin/LinkedListAPI.o bin/libllist.a bin/CalendarParser.o bin/libcparse.a

@@ -1,7 +1,7 @@
 ************************************************
 Gia Vinh Lam             0925571
-CIS2750 F2017            A1 - Library
-01/10/2017               glam01@uoguelph.ca
+CIS2750 F2017            A2 - Library +
+16/10/2017               glam01@uoguelph.ca
 ************************************************
 
 ***********
@@ -23,10 +23,8 @@ This program implements a static library to parse iCalendar files. These files a
 Information from the file will be extracted, parsed, and put through verification. Any errors encountered during parsing will result in the function
 stopping and returning a value associated with that error.
 
-
 *********************************
 Known Limitations or Assumptions
 *********************************
 Memory Limits (if file is very large)
-Some assumptions made in regards to formatting (ex. no need to trim spaces in the beginning, duplicate optional properties do not matter...etc.)
-Assumptions made for calendar file (validity more flexible, calendar just needs to have 2 required properties and 1 required component...)
+Assumptions made for calendar file format

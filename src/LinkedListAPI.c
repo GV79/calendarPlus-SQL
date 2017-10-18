@@ -13,7 +13,6 @@ Permission to use this code was granted by my current cis2750 professor Denis Ni
 Compiles with -std=c11 -Wall and -pedantic tags.
 ****************************************************************************************/
 
-//need to test functions when list isnt initialized or no node in there
 #include "LinkedListAPI.h"
 
 List initializeList(char* (*printFunction)(void* toBePrinted),void (*deleteFunction)(void* toBeDeleted),int (*compareFunction)(const void* first,const void* second))
@@ -21,6 +20,7 @@ List initializeList(char* (*printFunction)(void* toBePrinted),void (*deleteFunct
     List list;
     list.head = NULL;
     list.tail = NULL;
+    list.length = 0;
     list.deleteData = deleteFunction;
     list.compare = compareFunction;
     list.printData = printFunction;
@@ -69,6 +69,7 @@ void insertFront(List * list, void * toBeAdded)
         newNode->previous = NULL;
         list->head = newNode;
     }
+    list->length++;
     return;
 }
 
@@ -94,6 +95,7 @@ void insertBack(List * list, void * toBeAdded)
         list->tail = newNode;
         list->tail->next = NULL;
     }
+    list->length++;
     return;
 }
 
@@ -105,6 +107,7 @@ void clearList(List * list)
             Node * tempTwo = NULL;
             list->head = NULL;
             list->tail = NULL;
+            list->length = 0;
             while (temp != NULL)
             {
                 tempTwo = temp->next;
@@ -128,7 +131,7 @@ void insertSorted(List* list, void* toBeAdded)
     {
         return;
     }
-
+    list->length++;
     if (list->head == NULL)
     {
         list->head = newNode;
@@ -137,9 +140,9 @@ void insertSorted(List* list, void* toBeAdded)
     }
     while (list->head != NULL)
     {
-        if (list->compare(list->head->data, toBeAdded) <= 0) //indicates str1 is less than or equal to str2. In the ASCII table, B and a is less than A
+        if (list->compare(list->head->data, toBeAdded) <= 0)
         {
-            if (list->head == list->tail) // If there is only one node currently... ex. New Node: B, Old Node: A
+            if (list->head == list->tail)
             {
                 list->head->next = newNode;
                 newNode->previous = list->head;
@@ -198,9 +201,11 @@ void* deleteDataFromList(List* list, void* toBeDeleted)
                     free(temp);
                     list->head = NULL;
                     list->tail = NULL;
+                    list->length = 0;
                     return NULL;
                 }
 
+                list->length--;
                 if (list->head->previous == NULL)
                 {
                     list->head->next->previous = NULL;
@@ -314,3 +319,23 @@ void * nextElement(ListIterator * iter)
     }
     return NULL;
 }
+
+// try doing List list without mallocing or initializing and pass it in maybe
+int getLength(List list) /// how to check if it exists??
+{
+    return list.length;
+}
+
+void* findElement(List list, bool (*customCompare)(const void* first,const void* second), const void* searchRecord)
+{
+    while (list.head != NULL)
+    {
+        if (customCompare(list.head->data, searchRecord))
+        {
+            return list.head->data;
+        }
+        list.head = list.head->next;
+    }
+    return NULL;
+}
+
