@@ -22,9 +22,11 @@ int main(int argc, char ** argv)
     char command[1000];
     int convertString = 0;
     int errorChecking = 0;
-    Calendar * calendar;
+    Calendar * calendar = NULL;
     Calendar * new = NULL;
     char * temp;
+    char * tempTwo = malloc(sizeof(char) * 100);
+    char userInput[1000];
     while (convertString != 5)
     {
         while (errorChecking == 0)
@@ -49,30 +51,47 @@ int main(int argc, char ** argv)
         switch(convertString)
         {
             case 1:
-                printf("%s\n", printError(createCalendar(argv[1], &calendar)));
+                memset(tempTwo, 0, sizeof(char));
+                strcpy(tempTwo, printError(createCalendar(argv[1], &calendar)));
+                printf("%s\n", tempTwo);
                 break;
             case 2:
-                temp = printCalendar(calendar);
-                printf("%s\n", temp);
-                free(temp);
+                if (calendar != NULL)
+                {
+                    temp = printCalendar(calendar);
+                    printf("%s\n", temp);
+                    free(temp);
+                }
                 break;
             case 3:
                 //how does this work?? UI?
                 break;
             case 4:
-                printf("%s\n", printError(writeCalendar("newFile", new)));
+                printf("Enter filename: \n");
+                scanf("%s", userInput);
+                printf("%s\n", printError(writeCalendar(userInput, new)));
                 break;
             case 5:
                 printf("Thanks for using the program.\n");
-                deleteCalendar(calendar);
-                exit(0);
+                //deleteCalendar(calendar);
+
+                if (calendar != NULL)
+                {
+                   // if (strcmp(printError(createCalendar(argv[1], &calendar)), "OK") == 0)
+                    if (strcmp(tempTwo, "OK") == 0)
+                    {
+                        deleteCalendar(calendar);
+                    }
+                }
+
+                break;
             default:
                 printf("Program ran into error.\n");
                 deleteCalendar(calendar);
-                exit(0);
+                break;
         }
     }
-
+    free(tempTwo);
     return 0;
 }
 
