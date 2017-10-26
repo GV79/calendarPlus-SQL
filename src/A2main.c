@@ -58,6 +58,14 @@ int main(int argc, char ** argv)
                 memset(tempTwo, 0, sizeof(char));
                 strcpy(tempTwo, printError(createCalendar(argv[1], &calendar)));
                 printf("%s\n", tempTwo);
+                 memset(tempTwo, 0, sizeof(char));
+                strcpy(tempTwo, printError(validateCalendar(calendar)));
+                printf("%s\n", tempTwo);
+                printf("writing\n");
+      	        memset(tempTwo, 0, sizeof(char));
+                strcpy(tempTwo, printError(writeCalendar("blip.ics", calendar)));
+                printf("%s\n", tempTwo);
+
                 break;
             case 2:
                 if (calendar != NULL)
@@ -208,14 +216,6 @@ int main(int argc, char ** argv)
 
     if (new != NULL)
     {
-
-/*
-        free(event->alarms.head->data);
-        free(event->alarms.head);
-        free(event);
-        free(new->events.head);
-        free(new);
-*/
         free(pointer);
         free(new->events.head);
         free(new);

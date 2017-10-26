@@ -401,7 +401,6 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                     deleteCalendar(*obj);
                     fclose(data);
                     *obj = NULL;
-printf("hsi\n");
                     return INV_CAL;
                 }
                 free(originalString);
@@ -825,6 +824,7 @@ printf("hsi\n");
                                           *obj = NULL;
                                           free(originalString);
                                           fclose(data);
+
                                           return INV_ALARM;
                                       }
 
@@ -1423,11 +1423,10 @@ ICalErrorCode writeCalendar(char* fileName, const Calendar * obj)
             {
                 iter = createIterator(event->alarms);
                 void * elemA;
-                fprintf(newFile, "BEGIN:VALARM\r\n");
-
 	        while ((elemA = nextElement(&iter)) != NULL)
                 {
                     Alarm * alarm = (Alarm*)elemA;
+                    fprintf(newFile, "BEGIN:VALARM\r\n");
                     fprintf(newFile, "ACTION:%s\r\n", alarm->action);
                     fprintf(newFile, "TRIGGER:%s\r\n", alarm->trigger);
 
@@ -1442,8 +1441,8 @@ ICalErrorCode writeCalendar(char* fileName, const Calendar * obj)
                             fprintf(newFile, "%s:%s\r\n", propertyValues2->propName, propertyValues2->propDescr);
                         }
                     }
+                    fprintf(newFile, "END:VALARM\r\n");
                 }
-                fprintf(newFile, "END:VALARM\r\n");
             }
         fprintf(newFile, "END:VEVENT\r\n");
         }
@@ -1462,7 +1461,9 @@ ICalErrorCode validateCalendar(const Calendar * obj)
         return OTHER_ERROR;
     }
 
-    int eventCheck, dtCheck, dtendCheck, durationCheck;
+    int eventCheck, dtCheck, dtendCheck, durationCheck, methodCheck, calCheck;
+    methodCheck = 0;
+    calCheck = 0;
     eventCheck = 0;
     dtCheck = 0;
     dtendCheck = 0;
@@ -1500,10 +1501,30 @@ ICalErrorCode validateCalendar(const Calendar * obj)
                 return INV_CAL;
             }
 
-            if (findElement(obj->properties, &customCompare, property->propName) != NULL)
+            if (strcmp(property->propName, "CALSCALE") == 0)
             {
-                free(duplicates);
-                return INV_CAL;
+                if (calCheck == 0)
+                {
+                    calCheck = 1;
+                }
+                else
+                {
+                    free(duplicates);
+                    return INV_CAL;
+                }
+            }
+
+            if (strcmp(property->propName, "METHOD") == 0)
+            {
+                if (methodCheck == 0)
+                {
+                    methodCheck = 1;
+                }
+                else
+                {
+                    free(duplicates);
+                    return INV_CAL;
+                }
             }
         }
     }
@@ -1628,18 +1649,6 @@ ICalErrorCode validateCalendar(const Calendar * obj)
 
     if (eventCheck == 0)
         return INV_EVENT;
-    
-/*
-
- if (obj->events.head != NULL)
-    {
-        iterE = createIterator(obj->events);
-        void * elemE;
-
-	while ((elemE = nextElement(&iterE)) != NULL)
-        {
-
-*/
 
     free(duplicates);
     return OK;
