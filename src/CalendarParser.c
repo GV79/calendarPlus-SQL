@@ -290,7 +290,6 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
         *obj = NULL;
         return INV_FILE;
     }
-
     FILE * data = NULL;
     data = fopen(fileName, "r");
     int lineCount = 0;
@@ -311,6 +310,8 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
     int lines = 0;
     int linesBackup = 0;
     int dt = 0;
+    int dtend = 0;
+    int duration = 0;
 
     if (data != NULL)
     {
@@ -338,31 +339,6 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
             lineCount++;
             dataText[strlen(dataText)-2] = '\0';
 
-/*
-            if (lineCount == 1 && (dataText[0] == ' ' || dataText[0] == '\t'))
-            {
-                while (i != strlen(dataText))
-                {
-                    dataText[i] = toupper(dataText[i]);
-                    i++;
-                } dataText[i] = '\0';
-                i = 0;
-
-	        if (!(strcmp(dataText, "BEGIN:VCALENDAR") == 0 || strcmp(dataText, "BEGIN;VCALENDAR") == 0))
-                {
-                    deleteCalendar(*obj);
-                    fclose(data);
-                    *obj = NULL;
-                    return INV_CAL;
-                }
-            }
-            else
-            {
-*/
-
-//            else
-  //          {
-//printf("%s\n", dataText);
                 if (dataText[0] == ' ' || dataText[0] == '\t')
                 {
                     char * tempLine = malloc(sizeof(char) * (strlen(dataText) + 1));
@@ -384,35 +360,8 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                     memset(dataText, 0, sizeof(char));
                     lines++;
                 }
-          //  }
-/*
-
-*/
         }
-/*
-                while (i != strlen(storedText[0]))
-                {
-                    storedText[0][i] = toupper(storedText[0][i]);
-                    i++;
-                } storedText[0][i] = '\0';
-                i = 0;
 
-	        if (!(strcmp(storedText[0], "BEGIN:VCALENDAR") == 0 || strcmp(storedText[0], "BEGIN;VCALENDAR") == 0))
-                {
-                    while (lines != 0)
-                    {
-                        free(storedText[t]);
-                        t++;
-                        lines--;
-                    } t = 0;
-                    deleteCalendar(*obj);
-                    fclose(data);
-                    *obj = NULL;
-                    return INV_CAL;
-                }
-*/
-//lineCount++;
-//changed lineCount - 2 to - 1
         while (i != strlen(storedText[lineCount - 1]))
         {
             storedText[lineCount - 1][i] = toupper(storedText[lineCount - 1][i]);
@@ -452,6 +401,7 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                     deleteCalendar(*obj);
                     fclose(data);
                     *obj = NULL;
+printf("hsi\n");
                     return INV_CAL;
                 }
                 free(originalString);
@@ -460,8 +410,6 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                 lines--;
                 continue;
             }
-
-
   	    if (stringCheck == NULL)
             {
                 while (linesBackup != 0)
@@ -578,20 +526,8 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                     deleteCalendar(*obj);
                     *obj = NULL;
                     fclose(data);
-                    return INV_EVENT;
+                    return INV_CAL;
                 }
-
-// maybe change above to == 0 and make bottom brace go to bottom
-/*
-                else if (strcmp(originalString, "BEGIN:VEVENT") != 0)
-                {
-                     free(originalString);
-                     memset(stringCheck, 0, sizeof(char));
-           	     i++;
-                     lines--;
-                     continue;
-                }
-*/
 
                 Event * event = malloc(sizeof(Event));
                 event->properties = initializeList(&printProperty, &deleteProperty, &compareFunc);
@@ -812,7 +748,7 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                                     free(originalString);
                                     *obj = NULL;
                                     fclose(data);
-                                    return INV_EVENT;
+                                    return INV_ALARM;
                                 }
 
                                 while (t != strlen(stringCheck))
@@ -837,7 +773,7 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                                           free(originalString);
                                           *obj = NULL;
                                           fclose(data);
-                                          return INV_EVENT;
+                                          return INV_ALARM;
                                       }
 
                                       stringSplit = malloc(sizeof(char) * (strlen(originalString) + 1));
@@ -889,7 +825,7 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                                           *obj = NULL;
                                           free(originalString);
                                           fclose(data);
-                                          return INV_EVENT;
+                                          return INV_ALARM;
                                       }
 
                                       stringSplit = malloc(sizeof(char) * (strlen(originalString) + 1));
@@ -950,7 +886,7 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                                           *obj = NULL;
                                           free(originalString);
                                           fclose(data);
-                                          return INV_EVENT;
+                                          return INV_ALARM;
                                       }
 
                                       stringSplit = malloc(sizeof(char) * (strlen(originalString) + 1));
@@ -984,6 +920,23 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                                       Property * property = malloc(sizeof(Property) + (strlen(originalString)+1) * sizeof(char));
                                       strcpy(property->propName, stringCheck);
                                       strcpy(property->propDescr, stringSplit);
+
+                                      if (!(strcmp(property->propName, "ATTACH") == 0 || strcmp(property->propName, "DESCRIPTION") == 0 || strcmp(property->propName, "SUMMARY") == 0 || strcmp(property->propName, "DURATION") == 0 || strcmp(property->propName, "REPEAT") == 0)) // add all accept properties here // attach lower case would work ?
+                                      {
+                                          while (linesBackup != 0)
+                                          {
+                                              free(storedText[t]);
+                                              t++;
+                                              linesBackup--;
+                                          } t = 0;
+                                          free(property);
+                                          deleteCalendar(*obj);
+                                          *obj = NULL;
+                                          free(originalString);
+                                          fclose(data);
+                                          return INV_ALARM; //DESCRIPTION may have more parsing needed
+                                      } //think it needs only duration? confirm
+
                                       insertBack(&alarm->properties, property);
                                       free(stringSplit);
                                 }
@@ -999,11 +952,10 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                                     *obj = NULL;
                                     free(originalString);
                                     fclose(data);
-                                    return INV_EVENT;
+                                    return INV_ALARM;
                                 }
                                 memset(stringCheck, 0, sizeof(char));
                             }
-                            //insertBack(&(**obj).event->alarms, alarm);
                             insertBack(&event->alarms, alarm);
 
                             if (!(triggerCount == 1 && actionCount == 1))
@@ -1018,7 +970,7 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                                 free(originalString);
                                 *obj = NULL;
                                 fclose(data);
-                                return INV_EVENT;
+                                return INV_ALARM;
                             }
                             triggerCount = 0;
                             actionCount = 0;
@@ -1041,6 +993,48 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                         }
                         Property * property = malloc(sizeof(Property) + (strlen(originalString)+1) * sizeof(char));
                         strcpy(property->propName, stringCheck);
+
+                        if (!(strcmp(property->propName, "ATTACH") == 0 || strcmp(property->propName, "CATEGORIES") == 0 || strcmp(property->propName, "CLASS") == 0 || strcmp(property->propName, "COMMENT") == 0 || strcmp(property->propName, "DESCRIPTION") == 0 || strcmp(property->propName, "COMMENT") == 0 || strcmp(property->propName, "GEO") == 0 || strcmp(property->propName, "LOCATION") == 0 || strcmp(property->propName, "PRIORITY") == 0 || strcmp(property->propName, "RESOURCES") == 0 || strcmp(property->propName, "STATUS") == 0 || strcmp(property->propName, "SUMMARY") == 0 || strcmp(property->propName, "DTSTART") == 0 || strcmp(property->propName, "DTEND") == 0 || strcmp(property->propName, "DURATION") == 0 || strcmp(property->propName, "TRANSP") == 0 || strcmp(property->propName, "CONTACT") == 0 || strcmp(property->propName, "RELATED-TO") == 0 || strcmp(property->propName, "URL") == 0 || strcmp(property->propName, "EXDATE") == 0 || strcmp(property->propName, "URL") == 0 || strcmp(property->propName, "URL") ==  0 || strcmp(property->propName, "ORGANIZER") ==  0 || strcmp(property->propName, "CREATED") ==  0 || strcmp(property->propName, "LAST-MODIFIED") ==  0 || strcmp(property->propName, "SEQUENCE") ==  0 || strcmp(property->propName, "RRULE") ==  0 || strcmp(property->propName, "RDATE") ==  0 || strcmp(property->propName, "EXDATE") ==  0))
+                        {
+                            while (linesBackup != 0)
+                            {
+                                free(storedText[t]);
+                                t++;
+                                linesBackup--;
+                            } t = 0;
+                            free(property);
+                            deleteCalendar(*obj);
+                            *obj = NULL;
+                            free(originalString);
+                            fclose(data);
+                            return INV_EVENT;
+                        }
+
+                        if ((strcmp(property->propName, "DTEND") == 0 || strcmp(property->propName, "DURATION") == 0) && (dt == 0 || dtend == 1 || duration == 1))
+                        {
+                            while (linesBackup != 0)
+                            {
+                                free(storedText[t]);
+                                t++;
+                                linesBackup--;
+                            } t = 0;
+                            free(property);
+                            deleteCalendar(*obj);
+                            *obj = NULL;
+                            free(originalString);
+                            fclose(data);
+                            return INV_EVENT;
+                        }
+
+                        if (strcmp(property->propName, "DTEND") == 0)
+                            dtend = 1;
+
+                        if (strcmp(property->propName, "DTSTART") == 0)
+                            dt = 1;
+
+                        if (strcmp(property->propName, "DURATION") == 0)
+                            duration = 1;
+
                         memset(stringCheck, 0, sizeof(char));
                         char * stringSplit = malloc(sizeof(char) * (strlen(originalString) + 1));
 			memset(stringSplit, 0, sizeof(char));
@@ -1091,14 +1085,14 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                     fclose(data);
                     return INV_EVENT;
                 }  
+                dt = 0; dtend = 0; duration = 0;
                 uidCount = 0;
                 dtCount = 0;
                 insertBack(&(**obj).events, event);   
             }
             else
             { //check for lowercase versions
-//printf("%s blah\n", storedText[i]);
-                //char * stringCheck = strtok(storedText[i], ";:");
+
                 if (originalString[strlen(originalString)-1] == ';' || originalString[strlen(originalString)-1] == ':' || originalString[0] == ':' || stringCheck == NULL)
                 {
                     while (linesBackup != 0)
@@ -1332,37 +1326,67 @@ char* printCalendar(const Calendar* obj)
 
 ICalErrorCode writeCalendar(char* fileName, const Calendar * obj)
 {
-    if (obj == NULL || strcmp(fileName, "") == 0 || fileName == NULL || strcmp(fileName, " ") == 0)
+    if (obj == NULL || fileName == NULL)
     {
         return WRITE_ERROR;
     } 
-    //if (validateCalendar(obj) != 1)
-    //    return WRITE_ERROR;
+
+    if (strlen(fileName) < 5)
+    {
+        return WRITE_ERROR;
+    }
+
+    if (!(fileName[strlen(fileName)-1] == 's' || fileName[strlen(fileName)-2] == 'c' || fileName[strlen(fileName)-3] == 'i' ||  fileName[strlen(fileName)-4] == '.'))
+    {
+        return WRITE_ERROR;
+    }
+
+    if (strcmp(fileName, "") == 0 || strcmp(fileName, " ") == 0)
+    {
+        return WRITE_ERROR;
+    } 
 
     char * temp = malloc(sizeof(char) * 10);
     temp = printError(validateCalendar(obj));
     if (strcmp(temp, "OK") != 0)
+    {
         return WRITE_ERROR;
+    }
 
     FILE * file = fopen(fileName, "r");
     char input[1000];
+
+    memset(input, 0, sizeof(char));
     if (file != NULL)
     {
         printf("Would you like to overwrite the existing file? Enter Y/N\n");
-        scanf("%s\n", input);
+        getchar();
+        fgets(input, 1000, stdin);
+        input[strlen(input)-1] = '\0';
         if (strcmp(input, "Y") != 0)
         {
             fclose(file);
             return WRITE_ERROR;
         }
     }
-    fclose(file);
     FILE * newFile = fopen(fileName, "w");
     fprintf(newFile, "BEGIN:VCALENDAR\r\n");
     fprintf(newFile, "VERSION:%f\r\n", obj->version);
-    
-    ListIterator iterP, iterE, iter, iter2, iter3;
-//print calendar properties first.. actually not necessary
+    fprintf(newFile, "PRODID:%s\r\n", obj->prodID);
+    ListIterator iterP, iterE, iter, iter2, iter3;  
+
+    if (obj->properties.head != NULL)
+    {
+        iterP = createIterator(obj->properties);
+        void * elemP;
+
+        while ((elemP = nextElement(&iterP)) != NULL)
+        {
+            Property * property = (Property*)elemP;
+            fprintf(newFile, "%s:%s\r\n", property->propName, property->propDescr);
+        }
+    }
+
     if (obj->events.head != NULL)
     {
         iterE = createIterator(obj->events);
@@ -1382,11 +1406,52 @@ ICalErrorCode writeCalendar(char* fileName, const Calendar * obj)
             {
                 fprintf(newFile, "\r\n");
             }
-            //fprintf(newFile, "BEGIN:VEVENT\r\n");
+
+            if (event->properties.head != NULL)
+            {
+                void * elem3;
+                iter3 = createIterator(event->properties);
+
+                while ((elem3 = nextElement(&iter3)) != NULL)
+                {
+                    Property * propertyValues = (Property*)elem3;
+                    fprintf(newFile, "%s:%s\r\n", propertyValues->propName, propertyValues->propDescr);
+                }
+            }
+
+            if (event->alarms.head != NULL)
+            {
+                iter = createIterator(event->alarms);
+                void * elemA;
+                fprintf(newFile, "BEGIN:VALARM\r\n");
+
+	        while ((elemA = nextElement(&iter)) != NULL)
+                {
+                    Alarm * alarm = (Alarm*)elemA;
+                    fprintf(newFile, "ACTION:%s\r\n", alarm->action);
+                    fprintf(newFile, "TRIGGER:%s\r\n", alarm->trigger);
+
+
+	                if (alarm->properties.head != NULL)
+                        {
+                        void * elem2;
+                        iter2 = createIterator(alarm->properties);
+                        while ((elem2 = nextElement(&iter2)) != NULL)
+                        {
+                            Property * propertyValues2 = (Property*)elem2;
+                            fprintf(newFile, "%s:%s\r\n", propertyValues2->propName, propertyValues2->propDescr);
+                        }
+                    }
+                }
+                fprintf(newFile, "END:VALARM\r\n");
+            }
+        fprintf(newFile, "END:VEVENT\r\n");
         }
+    fprintf(newFile, "END:VCALENDAR\r\n");
+
     }    
 
-    fclose(file);
+    fclose(newFile);
     return OK;
 }
 
@@ -1397,14 +1462,8 @@ ICalErrorCode validateCalendar(const Calendar * obj)
         return OTHER_ERROR;
     }
 
-    int versionCheck, prodCheck, eventCheck, alarmCheck, actionCheck, triggerCheck, propertyCheck, dtCheck, dtendCheck, durationCheck;
-    versionCheck = 0;
-    prodCheck = 0;
+    int eventCheck, dtCheck, dtendCheck, durationCheck;
     eventCheck = 0;
-    alarmCheck = 0;
-    actionCheck = 0;
-    triggerCheck = 0;
-    propertyCheck = 0;
     dtCheck = 0;
     dtendCheck = 0;
     durationCheck = 0;
@@ -1458,6 +1517,23 @@ ICalErrorCode validateCalendar(const Calendar * obj)
         while ((elemE = nextElement(&iterE)) != NULL)
         {
             Event * event = (Event*)elemE;
+            if (event->UID == NULL || strcmp(event->UID, "") == 0)
+            {
+                free(duplicates);
+                return INV_EVENT;
+            }
+
+            if (event->creationDateTime.time == NULL || event->creationDateTime.date == NULL)
+            {
+                free(duplicates);
+                return INV_EVENT;
+            }
+
+            if (strcmp(event->creationDateTime.time, "") == 0 || strcmp(event->creationDateTime.time, "") == 0)
+            {
+                free(duplicates);
+                return INV_EVENT;
+            }
 
             if (event->alarms.head != NULL)
             {
@@ -1466,7 +1542,8 @@ ICalErrorCode validateCalendar(const Calendar * obj)
 	        while ((elem = nextElement(&iter)) != NULL)
                 {
 		    Alarm * alarm = (Alarm*)elem; //assuming audio alarm from forums?
-//check if dstart, if dstart, dtend or duration must appear after, dtend and duration cannot appear at same time
+
+
 		    if (alarm->properties.head != NULL)
                     {
                         void * elem2;
@@ -1493,7 +1570,7 @@ ICalErrorCode validateCalendar(const Calendar * obj)
 			    duplicates = realloc(duplicates, strlen(duplicates) + strlen(propertyValues->propName) + 1);
                             duplicates = strcat(duplicates, propertyValues->propName);
                             
-                            if (!(strcmp(propertyValues->propName, "ATTACH") == 0 || strcmp(propertyValues->propName, "DESCRIPTION") == 0 || strcmp(propertyValues->propName, "SUMMARY") == 0) || strcmp(propertyValues->propName, "DURATION") == 0) // add all accept properties here // attach lower case would work ?
+                            if (!(strcmp(propertyValues->propName, "ATTACH") == 0 || strcmp(propertyValues->propName, "DESCRIPTION") == 0 || strcmp(propertyValues->propName, "SUMMARY") == 0 || strcmp(propertyValues->propName, "DURATION") == 0 || strcmp(propertyValues->propName, "REPEAT") == 0)) // add all accept properties here // attach lower case would work ?
                             {
                                 free(duplicates);
                                 return INV_ALARM; //DESCRIPTION may have more parsing needed
@@ -1523,11 +1600,10 @@ ICalErrorCode validateCalendar(const Calendar * obj)
 	            duplicates = realloc(duplicates, strlen(duplicates) + strlen(propertyValues2->propName) + 1);
                     duplicates = strcat(duplicates, propertyValues2->propName);
 
-                    if (!(strcmp(propertyValues2->propName, "ATTACH") == 0 || strcmp(propertyValues2->propName, "CATEGORIES") == 0 || strcmp(propertyValues2->propName, "CLASS") == 0 || strcmp(propertyValues2->propName, "COMMENT") == 0 || strcmp(propertyValues2->propName, "DESCRIPTION") == 0 || strcmp(propertyValues2->propName, "COMMENT") == 0 || strcmp(propertyValues2->propName, "GEO") == 0) || strcmp(propertyValues2->propName, "LOCATION") == 0 || strcmp(propertyValues2->propName, "PRIORITY") == 0 || strcmp(propertyValues2->propName, "RESOURCES") == 0 || strcmp(propertyValues2->propName, "STATUS") == 0 || strcmp(propertyValues2->propName, "SUMMARY") == 0 || strcmp(propertyValues2->propName, "DTSTART") == 0 || strcmp(propertyValues2->propName, "DTEND") == 0 || strcmp(propertyValues2->propName, "DURATION") == 0 || strcmp(propertyValues2->propName, "TRANSP") == 0 || strcmp(propertyValues2->propName, "CONTACT") == 0 || strcmp(propertyValues2->propName, "RELATED-TO") == 0 || strcmp(propertyValues2->propName, "URL") == 0 || strcmp(propertyValues2->propName, "EXDATE") == 0 || strcmp(propertyValues2->propName, "URL") == 0 || strcmp(propertyValues2->propName, "URL") ==  0)
+                    if (!(strcmp(propertyValues2->propName, "ATTACH") == 0 || strcmp(propertyValues2->propName, "CATEGORIES") == 0 || strcmp(propertyValues2->propName, "CLASS") == 0 || strcmp(propertyValues2->propName, "COMMENT") == 0 || strcmp(propertyValues2->propName, "DESCRIPTION") == 0 || strcmp(propertyValues2->propName, "COMMENT") == 0 || strcmp(propertyValues2->propName, "GEO") == 0 || strcmp(propertyValues2->propName, "LOCATION") == 0 || strcmp(propertyValues2->propName, "PRIORITY") == 0 || strcmp(propertyValues2->propName, "RESOURCES") == 0 || strcmp(propertyValues2->propName, "STATUS") == 0 || strcmp(propertyValues2->propName, "SUMMARY") == 0 || strcmp(propertyValues2->propName, "DTSTART") == 0 || strcmp(propertyValues2->propName, "DTEND") == 0 || strcmp(propertyValues2->propName, "DURATION") == 0 || strcmp(propertyValues2->propName, "TRANSP") == 0 || strcmp(propertyValues2->propName, "CONTACT") == 0 || strcmp(propertyValues2->propName, "RELATED-TO") == 0 || strcmp(propertyValues2->propName, "URL") == 0 || strcmp(propertyValues2->propName, "EXDATE") == 0 || strcmp(propertyValues2->propName, "URL") == 0 || strcmp(propertyValues2->propName, "URL") ==  0 || strcmp(propertyValues2->propName, "ORGANIZER") ==  0 || strcmp(propertyValues2->propName, "CREATED") ==  0 || strcmp(propertyValues2->propName, "LAST-MODIFIED") ==  0 || strcmp(propertyValues2->propName, "SEQUENCE") ==  0 || strcmp(propertyValues2->propName, "RRULE") ==  0 || strcmp(propertyValues2->propName, "RDATE") ==  0 || strcmp(propertyValues2->propName, "EXDATE") ==  0))
                     {
                         return INV_EVENT; //DESCRIPTION, RESOURCES may need extra parsing
                     }
-//dtstart checking
                     if ((strcmp(propertyValues2->propName, "DTEND") == 0 || strcmp(propertyValues2->propName, "DURATION") == 0) && (dtCheck != 1 || dtendCheck == 1 || durationCheck == 1))
                     {
                         return INV_EVENT;
@@ -1541,7 +1617,6 @@ ICalErrorCode validateCalendar(const Calendar * obj)
 
                     if (strcmp(propertyValues2->propName, "DTSTART") == 0)
                         dtCheck = 1;
-                    //if (!(strcmp(event->properties->propName
                 }
                 free(duplicates);
                 duplicates = malloc(sizeof(char));

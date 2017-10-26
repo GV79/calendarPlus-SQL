@@ -30,6 +30,7 @@ int main(int argc, char ** argv)
     char date[9];
     char time[7];
     char timeVerify[2];
+    char * pointer= NULL;
     while (convertString != 5)
     {
         while (errorChecking == 0)
@@ -70,7 +71,6 @@ int main(int argc, char ** argv)
                 //for now test validateCalendar here and do other shit
                 if (new != NULL)
                 {
-                    deleteCalendar(new);
                     free(new);
                 }
                 int z = 0;
@@ -78,7 +78,7 @@ int main(int argc, char ** argv)
                 memset(time, 0, sizeof(char));
                 memset(userInput, 0, sizeof(char));
                 memset(timeVerify, 0, sizeof(char));
-                Calendar * new = malloc(sizeof(Calendar));
+                new = malloc(sizeof(Calendar));
                 new->properties = initializeList(NULL, NULL, NULL);
                 new->events = initializeList(NULL, NULL, NULL);
                 Event * event = malloc(sizeof(Event));
@@ -120,6 +120,7 @@ int main(int argc, char ** argv)
                 fgets(userInput, 100, stdin);
                 userInput[strlen(userInput)-1] = '\0';
 
+                printf("Verifying Calendar Object Status: \n");
                 if (!(strlen(userInput) == 15 || strlen(userInput) == 16))
                 {
                     printf("INV_CAL\n");
@@ -177,18 +178,10 @@ int main(int argc, char ** argv)
                 memset(tempTwo, 0, sizeof(char));
                 strcpy(tempTwo, printError(validateCalendar(new)));
                 printf("%s\n", tempTwo);
-
-                char * pointer = alarm->trigger;
-                free(event->alarms.head->data);
-                free(event->alarms.head);
-                free(event);
-                free(new->events.head);
-                free(new);
-                free(pointer);
-                new = NULL;
+                pointer = alarm->trigger;
                 break;
             case 4:
-                printf("Enter filename: \n");
+                printf("Enter filename with extension .ics: \n");
                 scanf("%s", userInput);
                 printf("%s\n", printError(writeCalendar(userInput, new)));
                 break;
@@ -212,6 +205,23 @@ int main(int argc, char ** argv)
                 break;
         }
     }
+
+    if (new != NULL)
+    {
+
+/*
+        free(event->alarms.head->data);
+        free(event->alarms.head);
+        free(event);
+        free(new->events.head);
+        free(new);
+*/
+        free(pointer);
+        free(new->events.head);
+        free(new);
+        new = NULL;
+    }
+
     free(tempTwo);
     return 0;
 }
@@ -224,7 +234,7 @@ int verifyCommand(char * command)
     {
         if (!isdigit(command[i]))
         {
-                printf("Error: can only enter one of the following digits: '1', '2', '3', '4', '5', '6', '7'. Please try again:\n");
+                printf("Error: can only enter one of the following digits: '1', '2', '3', '4', '5'. Please try again:\n");
                 return 0;
         }
         else
@@ -232,7 +242,7 @@ int verifyCommand(char * command)
             input = atoi(command);
             if (command[0] == '0' || input > 5)
             {
-                printf("Error: can only enter one of the following digits: '1', '2', '3', '4', '5', '6', '7'. Please try again:\n");
+                printf("Error: can only enter one of the following digits: '1', '2', '3', '4', '5'. Please try again:\n");
                 return 0;
             }
         }
