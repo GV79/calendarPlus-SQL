@@ -27,6 +27,9 @@ int main(int argc, char ** argv)
     char * temp;
     char * tempTwo = malloc(sizeof(char) * 100);
     char userInput[1000];
+    char date[9];
+    char time[7];
+    char timeVerify[2];
     while (convertString != 5)
     {
         while (errorChecking == 0)
@@ -64,7 +67,125 @@ int main(int argc, char ** argv)
                 }
                 break;
             case 3:
-                //how does this work?? UI?
+                //for now test validateCalendar here and do other shit
+                if (new != NULL)
+                {
+                    deleteCalendar(new);
+                    free(new);
+                }
+                int z = 0;
+                memset(date, 0, sizeof(char));
+                memset(time, 0, sizeof(char));
+                memset(userInput, 0, sizeof(char));
+                memset(timeVerify, 0, sizeof(char));
+                Calendar * new = malloc(sizeof(Calendar));
+                new->properties = initializeList(NULL, NULL, NULL);
+                new->events = initializeList(NULL, NULL, NULL);
+                Event * event = malloc(sizeof(Event));
+                event->properties = initializeList(NULL, NULL, NULL);
+                event->alarms = initializeList(NULL, NULL, NULL);
+                Alarm * alarm = malloc(sizeof(Alarm));
+                alarm->properties = initializeList(NULL, NULL, NULL);
+                alarm->trigger = malloc(sizeof(char) * 100);
+
+                printf("Creating a Calendar object from user input (assuming 1 event and 1 alarm): \n");
+                printf("Enter the calendar version: \n");
+                getchar();
+                fgets(userInput, 100, stdin);           
+                userInput[strlen(userInput)-1] = '\0';
+                new->version = atof(userInput);
+                memset(userInput, 0, sizeof(char));
+                printf("Enter the calendar prodID: \n");
+                fgets(userInput, 100, stdin);           
+                userInput[strlen(userInput)-1] = '\0';
+                strcpy(new->prodID, userInput);
+                memset(userInput, 0, sizeof(char));
+                printf("Enter the event UID: \n");
+                fgets(userInput, 100, stdin);           
+                userInput[strlen(userInput)-1] = '\0';
+                strcpy(event->UID, userInput);
+                memset(userInput, 0, sizeof(char));
+                printf("Enter the alarm action for the event: \n");
+                fgets(userInput, 100, stdin);           
+                userInput[strlen(userInput)-1] = '\0';
+                strcpy(alarm->action, userInput);
+                memset(userInput, 0, sizeof(char));
+                printf("Enter the alarm trigger for the event: \n");
+                fgets(userInput, 100, stdin);           
+                userInput[strlen(userInput)-1] = '\0';
+                strcpy(alarm->trigger, userInput);
+                memset(userInput, 0, sizeof(char));
+
+                printf("Enter the event creationDateTime: \n");
+                fgets(userInput, 100, stdin);
+                userInput[strlen(userInput)-1] = '\0';
+
+                if (!(strlen(userInput) == 15 || strlen(userInput) == 16))
+                {
+                    printf("INV_CAL\n");
+                    memset(tempTwo, 0, sizeof(char));
+                    free(alarm->trigger);
+                    free(alarm);
+                    free(event);
+                    free(new);
+                    new = NULL;
+                    break;
+                }
+
+                if (userInput[8] != 'T')
+                {
+                    printf("INV_CAL\n");
+                    memset(tempTwo, 0, sizeof(char));
+                    free(alarm->trigger);
+                    free(alarm);
+                    free(event);
+                    free(new);
+                    new = NULL;
+                    break;
+                }
+
+                for (z = 0; z < 8; z++)
+                {
+                    date[z] = userInput[z];
+                } date[z] = '\0';
+                
+                for (z = 0; z < 6; z++)
+                {
+                    time[z] = userInput[z+9];
+                } time[z] = '\0';
+
+                if (strlen(userInput) == 16)
+                {
+                    if (userInput[15] == 'Z')
+                    {
+                        timeVerify[0] = '1';
+                    }
+                } timeVerify[1] = '\0';
+                insertBack(&event->alarms, alarm);
+                strcpy(event->creationDateTime.date, date);
+                strcpy(event->creationDateTime.time, time);
+                
+                if (strcmp(timeVerify, "1") == 0)
+                {
+                      event->creationDateTime.UTC = 1;
+                }
+                else
+                {
+                      event->creationDateTime.UTC = 0;
+                }
+                insertBack(&new->events, event);
+                memset(tempTwo, 0, sizeof(char));
+                strcpy(tempTwo, printError(validateCalendar(new)));
+                printf("%s\n", tempTwo);
+
+                char * pointer = alarm->trigger;
+                free(event->alarms.head->data);
+                free(event->alarms.head);
+                free(event);
+                free(new->events.head);
+                free(new);
+                free(pointer);
+                new = NULL;
                 break;
             case 4:
                 printf("Enter filename: \n");

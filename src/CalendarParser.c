@@ -38,8 +38,8 @@ void deleteAlarm(void * toBeDeleted)
     {
         Alarm * temp;
         temp = (Alarm*)toBeDeleted;
-        clearList(&temp->properties);
         free(temp->trigger);
+        clearList(&temp->properties);
         free(temp);
     }
     return;
@@ -335,11 +335,11 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
                 *obj = NULL;
                 return INV_CAL;
             } 
-
             lineCount++;
             dataText[strlen(dataText)-2] = '\0';
 
-            if (lineCount == 1)
+/*
+            if (lineCount == 1 && (dataText[0] == ' ' || dataText[0] == '\t'))
             {
                 while (i != strlen(dataText))
                 {
@@ -358,34 +358,69 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
             }
             else
             {
+*/
+
+//            else
+  //          {
+//printf("%s\n", dataText);
                 if (dataText[0] == ' ' || dataText[0] == '\t')
                 {
                     char * tempLine = malloc(sizeof(char) * (strlen(dataText) + 1));
                     strcpy(tempLine, dataText+1);
-                    storedText[lineCount - 3] = realloc(storedText[lineCount - 3], strlen(storedText[lineCount - 3]) + strlen(tempLine) + 1);
-                    storedText[lineCount - 3] = strcat(storedText[lineCount - 3], tempLine);
+                    //storedText[lineCount - 3] = realloc(storedText[lineCount - 3], strlen(storedText[lineCount - 3]) + strlen(tempLine) + 1);
+                    //storedText[lineCount - 3] = strcat(storedText[lineCount - 3], tempLine);
+                    storedText[lineCount - 2] = realloc(storedText[lineCount - 2], strlen(storedText[lineCount - 2]) + strlen(tempLine) + 1);
+                    storedText[lineCount - 2] = strcat(storedText[lineCount - 2], tempLine);
                     memset(dataText, 0, sizeof(char));
                     free(tempLine);
                     lineCount--;
                 }
                 else
                 {
-                    storedText[lineCount - 2] = malloc(sizeof(char) * (strlen(dataText) + 1));
-                    strcpy(storedText[lineCount - 2], dataText);
+                    //storedText[lineCount - 2] = malloc(sizeof(char) * (strlen(dataText) + 1));
+                    //strcpy(storedText[lineCount - 2], dataText);
+                    storedText[lineCount - 1] = malloc(sizeof(char) * (strlen(dataText) + 1));
+                    strcpy(storedText[lineCount - 1], dataText);
                     memset(dataText, 0, sizeof(char));
                     lines++;
                 }
-            }
-        }
+          //  }
+/*
 
-        while (i != strlen(storedText[lineCount - 2]))
+*/
+        }
+/*
+                while (i != strlen(storedText[0]))
+                {
+                    storedText[0][i] = toupper(storedText[0][i]);
+                    i++;
+                } storedText[0][i] = '\0';
+                i = 0;
+
+	        if (!(strcmp(storedText[0], "BEGIN:VCALENDAR") == 0 || strcmp(storedText[0], "BEGIN;VCALENDAR") == 0))
+                {
+                    while (lines != 0)
+                    {
+                        free(storedText[t]);
+                        t++;
+                        lines--;
+                    } t = 0;
+                    deleteCalendar(*obj);
+                    fclose(data);
+                    *obj = NULL;
+                    return INV_CAL;
+                }
+*/
+//lineCount++;
+//changed lineCount - 2 to - 1
+        while (i != strlen(storedText[lineCount - 1]))
         {
-            storedText[lineCount - 2][i] = toupper(storedText[lineCount - 2][i]);
+            storedText[lineCount - 1][i] = toupper(storedText[lineCount - 1][i]);
             i++;
-        } storedText[lineCount - 2][i] = '\0'; 
+        } storedText[lineCount - 1][i] = '\0'; 
         i = 0;
 
-        if (!(strcmp(storedText[lineCount - 2], "END:VCALENDAR") == 0 || strcmp(storedText[lineCount - 2], "END;VCALENDAR") == 0))
+        if (!(strcmp(storedText[lineCount - 1], "END:VCALENDAR") == 0 || strcmp(storedText[lineCount - 1], "END;VCALENDAR") == 0))
         {
             while (lines != 0)
             {
@@ -404,6 +439,29 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
             char * originalString = calloc(strlen(storedText[i])+1, sizeof(char));
             strcpy(originalString, storedText[i]);
             char * stringCheck = strtok(storedText[i], ";:");
+            if (i == 0)
+            {
+                while (i != strlen(originalString))
+                {
+                    originalString[i] = toupper(originalString[i]);
+                    i++;
+                } originalString[i] = '\0';
+                i = 0;
+	        if (!(strcmp(originalString, "BEGIN:VCALENDAR") == 0 || strcmp(originalString, "BEGIN;VCALENDAR") == 0))
+                {
+                    deleteCalendar(*obj);
+                    fclose(data);
+                    *obj = NULL;
+                    return INV_CAL;
+                }
+                free(originalString);
+                memset(stringCheck, 0, sizeof(char));
+                i++;
+                lines--;
+                continue;
+            }
+
+
   	    if (stringCheck == NULL)
             {
                 while (linesBackup != 0)
@@ -537,7 +595,7 @@ ICalErrorCode createCalendar(char* fileName, Calendar** obj)
 
                 Event * event = malloc(sizeof(Event));
                 event->properties = initializeList(&printProperty, &deleteProperty, &compareFunc);
-                event->alarms = initializeList(&printProperty, &deleteProperty, &compareFunc);
+                event->alarms = initializeList(&printAlarm, &deleteAlarm, &compareFunc);
 
                 eventCount = 1;
                 while (strcmp(originalString, "END:VEVENT") != 0)
@@ -1278,9 +1336,57 @@ ICalErrorCode writeCalendar(char* fileName, const Calendar * obj)
     {
         return WRITE_ERROR;
     } 
-    if (validateCalendar(obj) != 1)
+    //if (validateCalendar(obj) != 1)
+    //    return WRITE_ERROR;
+
+    char * temp = malloc(sizeof(char) * 10);
+    temp = printError(validateCalendar(obj));
+    if (strcmp(temp, "OK") != 0)
         return WRITE_ERROR;
 
+    FILE * file = fopen(fileName, "r");
+    char input[1000];
+    if (file != NULL)
+    {
+        printf("Would you like to overwrite the existing file? Enter Y/N\n");
+        scanf("%s\n", input);
+        if (strcmp(input, "Y") != 0)
+        {
+            fclose(file);
+            return WRITE_ERROR;
+        }
+    }
+    fclose(file);
+    FILE * newFile = fopen(fileName, "w");
+    fprintf(newFile, "BEGIN:VCALENDAR\r\n");
+    fprintf(newFile, "VERSION:%f\r\n", obj->version);
+    
+    ListIterator iterP, iterE, iter, iter2, iter3;
+//print calendar properties first.. actually not necessary
+    if (obj->events.head != NULL)
+    {
+        iterE = createIterator(obj->events);
+        void * elemE;
+
+        while ((elemE = nextElement(&iterE)) != NULL)
+        {
+            Event * event = (Event*)elemE;
+            fprintf(newFile, "BEGIN:VEVENT\r\n");
+            fprintf(newFile, "UID:%s\r\n", event->UID);
+            fprintf(newFile, "DTSTAMP:%sT%s", event->creationDateTime.date, event->creationDateTime.time);
+            if (event->creationDateTime.UTC)
+            {
+                fprintf(newFile, "Z\r\n");
+            }
+            else
+            {
+                fprintf(newFile, "\r\n");
+            }
+            //fprintf(newFile, "BEGIN:VEVENT\r\n");
+        }
+    }    
+
+    fclose(file);
     return OK;
 }
 
@@ -1290,6 +1396,177 @@ ICalErrorCode validateCalendar(const Calendar * obj)
     {
         return OTHER_ERROR;
     }
+
+    int versionCheck, prodCheck, eventCheck, alarmCheck, actionCheck, triggerCheck, propertyCheck, dtCheck, dtendCheck, durationCheck;
+    versionCheck = 0;
+    prodCheck = 0;
+    eventCheck = 0;
+    alarmCheck = 0;
+    actionCheck = 0;
+    triggerCheck = 0;
+    propertyCheck = 0;
+    dtCheck = 0;
+    dtendCheck = 0;
+    durationCheck = 0;
+    ListIterator iterP, iterE, iter, iter2, iter3;
+    char * duplicates = malloc(sizeof(char));
+    memset(duplicates, 0, sizeof(char));
+
+    if (obj->version == 0)
+    {
+        return INV_CAL;
+    }
+    if (obj->prodID == NULL || strcmp(obj->prodID, "") == 0)
+    {
+        return INV_CAL;
+    }
+
+    if (obj->properties.head != NULL)
+    {
+        iterP = createIterator(obj->properties);
+        void * elemP;
+        
+	while ((elemP = nextElement(&iterP)) != NULL)
+        {
+            Property * property = (Property*)elemP;
+            if (property->propDescr == NULL || strcmp(property->propDescr, "") == 0)
+            {
+                free(duplicates);
+                return INV_CAL;
+            }
+
+            if (!(strcmp(property->propName, "CALSCALE") == 0 || strcmp(property->propName, "METHOD") == 0))
+            {
+                free(duplicates);
+                return INV_CAL;
+            }
+
+            if (findElement(obj->properties, &customCompare, property->propName) != NULL)
+            {
+                free(duplicates);
+                return INV_CAL;
+            }
+        }
+    }
+
+    if (obj->events.head != NULL)
+    {
+        iterE = createIterator(obj->events);
+        eventCheck = 1;
+        void * elemE;
+
+        while ((elemE = nextElement(&iterE)) != NULL)
+        {
+            Event * event = (Event*)elemE;
+
+            if (event->alarms.head != NULL)
+            {
+                iter = createIterator(event->alarms);
+                void * elem;
+	        while ((elem = nextElement(&iter)) != NULL)
+                {
+		    Alarm * alarm = (Alarm*)elem; //assuming audio alarm from forums?
+//check if dstart, if dstart, dtend or duration must appear after, dtend and duration cannot appear at same time
+		    if (alarm->properties.head != NULL)
+                    {
+                        void * elem2;
+                        iter2 = createIterator(alarm->properties);
+                        if (alarm->action == NULL || strcmp(alarm->action, "") == 0 || alarm->trigger == NULL || strcmp(alarm->trigger, "") == 0)
+                        {
+                            free(duplicates);
+                            return INV_ALARM;
+                        }
+
+                        while ((elem2 = nextElement(&iter2)) != NULL)
+                        {
+                            Property * propertyValues = (Property*)elem2;
+                            if (propertyValues->propDescr == NULL || strcmp(propertyValues->propDescr, "") == 0)
+                            {
+                                free(duplicates);
+                                return INV_ALARM;
+                            }
+                            if (strstr(duplicates, propertyValues->propName) != NULL)
+                            {
+                                free(duplicates);
+                                return INV_ALARM;
+                            }
+			    duplicates = realloc(duplicates, strlen(duplicates) + strlen(propertyValues->propName) + 1);
+                            duplicates = strcat(duplicates, propertyValues->propName);
+                            
+                            if (!(strcmp(propertyValues->propName, "ATTACH") == 0 || strcmp(propertyValues->propName, "DESCRIPTION") == 0 || strcmp(propertyValues->propName, "SUMMARY") == 0) || strcmp(propertyValues->propName, "DURATION") == 0) // add all accept properties here // attach lower case would work ?
+                            {
+                                free(duplicates);
+                                return INV_ALARM; //DESCRIPTION may have more parsing needed
+                            } //think it needs only duration? confirm
+                        }
+                    }
+                    free(duplicates);
+                    duplicates = malloc(sizeof(char));
+                    memset(duplicates, 0, sizeof(char));
+	        }
+            }
+
+            if (event->properties.head != NULL)
+            {
+                void * elem3;
+                iter3 = createIterator(event->properties);
+                while ((elem3 = nextElement(&iter3)) != NULL)
+                {
+                    Property * propertyValues2 = (Property*)elem3;
+                    if (propertyValues2->propDescr == NULL || strcmp(propertyValues2->propDescr, "") == 0)
+                    {
+                        return INV_EVENT;
+                    }
+                    if (strstr(duplicates, propertyValues2->propName) != NULL)
+                        return INV_EVENT;
+
+	            duplicates = realloc(duplicates, strlen(duplicates) + strlen(propertyValues2->propName) + 1);
+                    duplicates = strcat(duplicates, propertyValues2->propName);
+
+                    if (!(strcmp(propertyValues2->propName, "ATTACH") == 0 || strcmp(propertyValues2->propName, "CATEGORIES") == 0 || strcmp(propertyValues2->propName, "CLASS") == 0 || strcmp(propertyValues2->propName, "COMMENT") == 0 || strcmp(propertyValues2->propName, "DESCRIPTION") == 0 || strcmp(propertyValues2->propName, "COMMENT") == 0 || strcmp(propertyValues2->propName, "GEO") == 0) || strcmp(propertyValues2->propName, "LOCATION") == 0 || strcmp(propertyValues2->propName, "PRIORITY") == 0 || strcmp(propertyValues2->propName, "RESOURCES") == 0 || strcmp(propertyValues2->propName, "STATUS") == 0 || strcmp(propertyValues2->propName, "SUMMARY") == 0 || strcmp(propertyValues2->propName, "DTSTART") == 0 || strcmp(propertyValues2->propName, "DTEND") == 0 || strcmp(propertyValues2->propName, "DURATION") == 0 || strcmp(propertyValues2->propName, "TRANSP") == 0 || strcmp(propertyValues2->propName, "CONTACT") == 0 || strcmp(propertyValues2->propName, "RELATED-TO") == 0 || strcmp(propertyValues2->propName, "URL") == 0 || strcmp(propertyValues2->propName, "EXDATE") == 0 || strcmp(propertyValues2->propName, "URL") == 0 || strcmp(propertyValues2->propName, "URL") ==  0)
+                    {
+                        return INV_EVENT; //DESCRIPTION, RESOURCES may need extra parsing
+                    }
+//dtstart checking
+                    if ((strcmp(propertyValues2->propName, "DTEND") == 0 || strcmp(propertyValues2->propName, "DURATION") == 0) && (dtCheck != 1 || dtendCheck == 1 || durationCheck == 1))
+                    {
+                        return INV_EVENT;
+                    }
+
+                    if (strcmp(propertyValues2->propName, "DTEND") == 0)
+                        dtendCheck = 1;
+
+                    if (strcmp(propertyValues2->propName, "DURATION") == 0) 
+                        durationCheck = 1;
+
+                    if (strcmp(propertyValues2->propName, "DTSTART") == 0)
+                        dtCheck = 1;
+                    //if (!(strcmp(event->properties->propName
+                }
+                free(duplicates);
+                duplicates = malloc(sizeof(char));
+                memset(duplicates, 0, sizeof(char));
+                dtCheck = 0; dtendCheck = 0; durationCheck = 0;
+            } 
+        }
+    }
+
+    if (eventCheck == 0)
+        return INV_EVENT;
+    
+/*
+
+ if (obj->events.head != NULL)
+    {
+        iterE = createIterator(obj->events);
+        void * elemE;
+
+	while ((elemE = nextElement(&iterE)) != NULL)
+        {
+
+*/
+
+    free(duplicates);
     return OK;
 }
 
@@ -1327,9 +1604,17 @@ char* printError(ICalErrorCode err) //const again? tf
     {
         return "INV_EVENT";
     }
+    else if (err == INV_ALARM)
+    {
+        return "INV_ALARM";
+    }
     else if (err == INV_CREATEDT)
     {
         return "INV_CREATEDT";
+    }
+     else if (err == WRITE_ERROR)
+    {
+        return "WRITE_ERROR";
     }
     return "OTHER_ERROR";
 }
