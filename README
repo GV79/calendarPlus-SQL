@@ -19,7 +19,7 @@ python3 bin/A4main.py
 How the Program(s) Works
 ************************
 Python GUI (tkinter) implementation of iCalendar v2.0 functionality using the ctypes library.
-Uses sql to store information to sql database server
+Uses sql to store information to mySQL database server
 
 *********************************
 Known Limitations or Assumptions
